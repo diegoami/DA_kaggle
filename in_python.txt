@@ -1,0 +1,4 @@
+import sys
+sys.path.append('~/PycharmProjects/kaggle')
+import subprocess
+subprocess.call(["house-prices/houseprices_kaggle.py","--percentage","0.05"])

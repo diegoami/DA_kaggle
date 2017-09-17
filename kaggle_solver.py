@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import cross_val_score
-
+from math import floor
 
 class KaggleSolver:
 
 
-    def __init__(self, train_filename, test_filename, id_column, result_column, preprocess, postprocess):
+    def __init__(self, train_filename, test_filename, id_column, result_column, preprocess, postprocess, percentage):
 
 
         self.train_filename = train_filename
@@ -15,6 +15,7 @@ class KaggleSolver:
         self.result_column = result_column
         self.preprocess = preprocess
         self.postprocess = postprocess
+        self.percentage = percentage
 
     def print_score(self, classifier, X_train, y_train):
 
@@ -32,10 +33,14 @@ class KaggleSolver:
         dsol.to_csv(output_file, index_label=self.id_column)
 
 
-    def solve(self, classifier, relevant_columns, output_file):
+    def solve(self, classifier,  output_file):
 
         train_df = pd.read_csv(self.train_filename)
         test_df = pd.read_csv(self.test_filename)
+
+        if (self.percentage < 1):
+            lperc = floor(len(train_df)*self.percentage)
+            train_df = train_df[:lperc]
 
         if self.preprocess != None:
             train_df = self.preprocess(train_df )
@@ -44,17 +49,25 @@ class KaggleSolver:
         ids = test_df[self.id_column]
         results = train_df[self.result_column]
 
-        train_df = self.postprocess(train_df)
-        test_df = self.postprocess(test_df)
 
         if self.postprocess != None:
-            X_train = np.array(train_df[relevant_columns])
-            y_train = np.array(results)
+            train_df = self.postprocess(train_df)
+            test_df = self.postprocess(test_df)
 
-        misscolumns = [x for x in relevant_columns if x not in test_df.columns]
+        relevant_columns = [x for x in list(train_df.columns) + list(test_df.columns) if x not in [self.id_column, self.result_column]]
 
-        for ms in misscolumns:
+        miss_test_columns = [x for x in relevant_columns if x not in test_df.columns]
+        miss_train_columns = [x for x in relevant_columns if x not in train_df.columns]
+
+        for ms in miss_test_columns:
             test_df[ms] = 0
+
+        for ms in miss_train_columns:
+            train_df[ms] = 0
+
+
+        X_train = np.array(train_df[relevant_columns])
+        y_train = np.array(results)
 
         X_test = np.array(test_df[relevant_columns])
         classifier.fit(X=X_train, y=y_train)

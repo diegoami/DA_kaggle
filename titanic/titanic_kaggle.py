@@ -1,5 +1,6 @@
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.svm import SVC
+import argparse
 
 
 from kaggle_solver import KaggleSolver
@@ -79,6 +80,7 @@ def step_df(tdata):
     dummy_pclass = pd.get_dummies(tdata['Deck'], prefix='Deck')
 
     tdata = pd.concat([tdata, dummy_sex, dummy_embarked, dummy_title, dummy_pclass], axis=1)
+    tdata = tdata.drop(['SexC', 'EmbarkedC','Embarked', 'Sex', 'Ticket', 'Name','Title',  'Pclass', 'Deck', 'Cabin'], axis=1)
 
     if 'PassengerId' in tdata.columns:
         tdata = tdata.drop('PassengerId', axis=1)
@@ -86,20 +88,33 @@ def step_df(tdata):
     return tdata
 
 
-kaggleSolver = KaggleSolver(id_column='PassengerId',result_column='Survived', train_filename='data/train.csv',
-                            test_filename='data/test.csv', preprocess=get_df, postprocess=step_df)
 
-classifier_params = [
-    {"classifier" : SVC(kernel='linear', C=1000, gamma=1000), "output_file" : "out/svcl_C_1000_gam_1000.csv"},
-    {"classifier": GradientBoostingClassifier(n_estimators=1000, max_depth=5), "output_file": "out/gbc_nes_1000_mad_t.csv"},
-    {"classifier": RandomForestClassifier(max_features=10,n_estimators=1000), "output_file": "out/rfc_maf_10_nes_1000.csv"}
-]
+if __name__ == "__main__":
+    argparser = argparse.ArgumentParser()
 
-rel_columns = [ 'Age', 'SibSp', 'Parch',
-       'Fare',  'SexC_0', 'SexC_1', 'EmbarkedC_0',
-       'EmbarkedC_1', 'EmbarkedC_2', 'Title_0', 'Title_1', 'Title_2',
-       'Title_3', 'Title_4', 'Title_5', 'Deck_0', 'Deck_1', 'Deck_2', 'Deck_3',
-       'Deck_4', 'Deck_5', 'Deck_6', 'Deck_7']
+    argparser.add_argument('--percentage')
+    args = argparser.parse_args()
 
-for _ in classifier_params:
-    kaggleSolver.solve(classifier=_["classifier"], relevant_columns=rel_columns, output_file=_["output_file"] )
+    percentage = float(args.percentage)
+
+    if args.percentage:
+        print("Training on only {} of samples".format(args.percentage))
+        percentage = float(args.percentage)
+
+    kaggleSolver = KaggleSolver(id_column='PassengerId',result_column='Survived', train_filename='data/train.csv',
+                                test_filename='data/test.csv', preprocess=get_df, postprocess=step_df, percentage=percentage )
+
+    classifier_params = [
+      #  {"classifier" : SVC(kernel='linear', C=1000, gamma=1000), "output_file" : "out/svcl_C_1000_gam_1000.csv"},
+        {"classifier": GradientBoostingClassifier(n_estimators=1000, max_depth=5), "output_file": "out/gbc_nes_1000_mad_t.csv"},
+        {"classifier": RandomForestClassifier(max_features=10,n_estimators=1000), "output_file": "out/rfc_maf_10_nes_1000.csv"}
+    ]
+
+    #rel_columns = [ 'Age', 'SibSp', 'Parch',
+    #       'Fare',  'SexC_0', 'SexC_1', 'EmbarkedC_0',
+    #       'EmbarkedC_1', 'EmbarkedC_2', 'Title_0', 'Title_1', 'Title_2',
+    #      'Title_3', 'Title_4', 'Title_5', 'Deck_0', 'Deck_1', 'Deck_2', 'Deck_3',
+    #       'Deck_4', 'Deck_5', 'Deck_6', 'Deck_7']
+
+    for _ in classifier_params:
+        kaggleSolver.solve(classifier=_["classifier"], output_file=_["output_file"] )
