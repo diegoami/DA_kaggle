@@ -64,9 +64,10 @@ if __name__ == "__main__":
     perc_100 = str(int(percentage*100))
 
     if args.percentage :
-        print("Training on only {}% of samples".format(perc_100))
         percentage = float(args.percentage)
         perc_100 = str(int(percentage * 100))
+        print("Training on only {}% of samples".format(perc_100))
+
 
     kaggleSolver = KaggleSolver(id_column='Id',result_column='SalePrice', train_filename='data/train.csv',
                                 test_filename='data/test.csv', preprocess=preprocess, postprocess=postprocess_hard, percentage=percentage )
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     }
 
     classifier_params = [
-       {"classifier": RandomForestRegressor(),"output_file": "out/rfc_H_" + perc_100 + ".csv"}
+       {"classifier": RandomForestRegressor(),"output_file": "out/rfc_H_01_" + perc_100 + ".csv"}
 
     ]
     print(classifier_params)
