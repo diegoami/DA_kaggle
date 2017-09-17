@@ -39,18 +39,21 @@ def postprocess_categorical(tdata):
 
 
 def postprocess_hard(tdata):
-    columns_objects, columns_others = tdata.columns[tdata.dtypes == np.dtype('O')], tdata.columns[tdata.dtypes != np.dtype('O')]
+    columns_objects, columns_numbers = tdata.columns[tdata.dtypes == np.dtype('O')], tdata.columns[tdata.dtypes ==  np.dtype(float)  ]
 
-
+    dummies = pd.DataFrame()
     for column_object in columns_objects:
 
 
         dummy_columns = pd.get_dummies(tdata[column_object], prefix=column_object, sparse=True)
-        tdata = pd.concat([tdata,dummy_columns])
-        tdata = tdata.drop(column_object)
+        dummies = pd.concat([dummies,dummy_columns])
 
-    for column_object in columns_others:
-        tdata[column_object+"_log"] = np.log1p(tdata[column_object])
+    tdata = tdata.drop(columns_objects, axis=1)
+    tdata = pd.concat([tdata,dummies])
+#
+#    for column_object in columns_numbers:
+#        print(column_object)
+#        tdata[column_object+"_log"] = np.log1p(tdata[column_object])
 
     return tdata
 
