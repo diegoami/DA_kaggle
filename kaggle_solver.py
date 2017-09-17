@@ -7,8 +7,6 @@ class KaggleSolver:
 
 
     def __init__(self, train_filename, test_filename, id_column, result_column, preprocess, postprocess, percentage):
-
-
         self.train_filename = train_filename
         self.test_filename  = test_filename
         self.id_column = id_column
@@ -18,23 +16,24 @@ class KaggleSolver:
         self.percentage = percentage
 
     def print_score(self, classifier, X_train, y_train):
-
         scores = cross_val_score(classifier, X_train, y_train, cv=5)
         print(scores)
 
     def print_sol(self, classifier, X_test, output_file, ids):
-
         yp = classifier.predict(X_test)
         dsol = pd.DataFrame()
         dsol[self.id_column] = ids
         dsol[self.result_column] = yp
-
         dsol = dsol.set_index(self.id_column)
         dsol.to_csv(output_file, index_label=self.id_column)
 
+    def print_best_parameters(self, classifier):
+        if hasattr(classifier,"best_estimator_"):
+            best_parameters = classifier.best_estimator_.get_params()
+            for param_name in sorted(best_parameters.keys()):
+                print("\t%s: %r" % (param_name, best_parameters[param_name]))
 
     def solve(self, classifier,  output_file):
-
         train_df = pd.read_csv(self.train_filename)
         test_df = pd.read_csv(self.test_filename)
 
@@ -48,7 +47,6 @@ class KaggleSolver:
 
         ids = test_df[self.id_column]
         results = train_df[self.result_column]
-
 
         if self.postprocess != None:
             train_df = self.postprocess(train_df)
@@ -72,5 +70,6 @@ class KaggleSolver:
         X_test = np.array(test_df[relevant_columns])
         classifier.fit(X=X_train, y=y_train)
 
+        self.print_best_parameters(classifier=classifier)
         self.print_score(classifier=classifier, X_train=X_train, y_train=y_train)
         self.print_sol(classifier=classifier, X_test=X_test, output_file=output_file, ids=ids)
