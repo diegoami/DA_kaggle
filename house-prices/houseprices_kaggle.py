@@ -1,5 +1,4 @@
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier, RandomForestRegressor, \
-    GradientBoostingRegressor
+from sklearn.ensemble import  RandomForestRegressor, GradientBoostingRegressor
 import argparse
 import os
 
@@ -34,6 +33,7 @@ def postprocess(tdata):
 #        tdata = pd.concat([tdata,dummy_columns])
 #        tdata = tdata.drop(column_object)
 #    return tdata
+#   MemoryError, WTF ?
     for column_object in columns_objects:
         tdata[column_object] = tdata[column_object].astype('category')
         tdata[column_object] = tdata[column_object].cat.codes
@@ -49,10 +49,10 @@ if __name__ == "__main__":
     args = argparser.parse_args()
 
     percentage = float(args.percentage)
-    perc_100 = str(int(percentage *1000))
+    perc_100 = str(int(percentage*100))
 
-    if args.percentage:
-        print("Training on only {} of samples".format(args.percentage))
+    if args.percentage :
+        print("Training on only {}% of samples".format(perc_100))
         percentage = float(args.percentage)
 
     kaggleSolver = KaggleSolver(id_column='Id',result_column='SalePrice', train_filename='data/train.csv',
@@ -60,6 +60,15 @@ if __name__ == "__main__":
 
 
     rfparams = {
+        "max_features" : range(16,24,2),
+        "n_estimators" : range(500,2000,500),
+        "min_samples_leaf" : (1, 2, 3)
+
+
+    }
+    xgbparams = {
+        "learning_rate" : (0.01, 0.1),
+        "n_estimators"  : (5000,6000,7000)
 
     }
 
@@ -68,8 +77,9 @@ if __name__ == "__main__":
         {"classifier": XGBRegressor(max_depth=5, min_child_weight=3, gamma=0, colsample_bytree=0.9, subsample=0.7, alpha=1e-3,
                                     learning_rate=0.01,
                                     n_estimators=5000)                                   ,"output_file": "out/xgbregressor_4_mad_5_mcw_3_gamma_0_cbt_09_ssa_07_a_1e3_lr_001_nes=5000" + perc_100 + ".csv"},
-        #{"classifier": GridSearchCV(XGBRegressor(max_depth=5, min_child_weight=3, gamma=0, colsample_bytree=0.9, subsample=0.7), xgbparams4),#"output_file": "out/gsearch_xgbregressor_4c_mad_5_mcw_3_gamma_0_cbt_09_ssa_07_" + perc_100 + ".csv"}
-        {"classifier": GridSearchCV(RandomForestRegressor(max_features=20, n_estimators=1000)),"output_file": "out/rfc_maf_10_nes_1000_" + perc_100 + ".csv"}
+
+        {"classifier": GridSearchCV(RandomForestRegressor(), rfparams),"output_file" : "out/grid_rfc_" + perc_100 + ".csv"},
+        {"classifier": GridSearchCV(XGBRegressor(max_depth=5, min_child_weight=3, gamma=0, colsample_bytree=0.9, subsample=0.7, alpha=1e-3), xgbparams),"output_file ": "out/grid_xgbregressor_4_mad_5_mcw_3_gamma_0_cbt_09_ssa_07_a_1e3_" + perc_100 + ".csv" }
 
     ]
 
