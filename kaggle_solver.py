@@ -2,11 +2,14 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import cross_val_score
 from math import floor
+import os
+os.environ["KERAS_BACKEND"] = "tensorflow"
+
 
 class KaggleSolver:
 
 
-    def __init__(self, train_filename, test_filename, id_column, result_column, preprocess, postprocess, percentage):
+    def __init__(self, train_filename, test_filename, id_column, result_column, preprocess, postprocess, percentage, id_column_out=None):
         self.train_filename = train_filename
         self.test_filename  = test_filename
         self.id_column = id_column
@@ -14,6 +17,7 @@ class KaggleSolver:
         self.preprocess = preprocess
         self.postprocess = postprocess
         self.percentage = percentage
+
 
     def print_score(self, classifier, X_train, y_train):
         scores = cross_val_score(classifier, X_train, y_train, cv=5)
@@ -34,8 +38,9 @@ class KaggleSolver:
                 print("\t%s: %r" % (param_name, best_parameters[param_name]))
 
     def solve(self, classifier,  output_file):
-        train_df = pd.read_csv(self.train_filename)
-        test_df = pd.read_csv(self.test_filename)
+        index_col = None if self.id_column else False
+        train_df = pd.read_csv(self.train_filename, index_col=index_col)
+        test_df = pd.read_csv(self.test_filename, index_col=index_col)
 
         if (self.percentage < 1):
             lperc = floor(len(train_df)*self.percentage)
@@ -45,7 +50,10 @@ class KaggleSolver:
             train_df = self.preprocess(train_df )
             test_df = self.preprocess(test_df )
 
-        ids = test_df[self.id_column]
+        if self.id_column:
+            ids = test_df[self.id_column]
+        else:
+            ids = test_df.index+1
         results = train_df[self.result_column]
 
         if self.postprocess != None:
